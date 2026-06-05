@@ -94,7 +94,7 @@ not in user scripts.
 
 **Root cause:**
 NWChem depends on plumed which requires a specific BLAS implementation
-that conflicts with numpy's requirements in the same environment.
+that conflicts with numpy requirements in the same conda environment.
 
 **Solution:**
     pip install mpi4py numpy pandas matplotlib scipy
@@ -127,6 +127,91 @@ This is why HPC documentation always tells users to add module commands
 to their ~/.bashrc.
 
 ---
+
+## Issue 006 - matplotlib savefig fails with read-only filesystem
+
+**Date:** 2026-05-31
+
+**Error:** OSError: [Errno 30] Read-only file system: '/Users/guillaumelumin/Documents/mpi_scaling.png'
+
+**Root cause:**
+Lima VM mounts the macOS home directory as read-only by default.
+Files must be saved inside the Linux home (/home/guillaumelumin.guest/)
+and then copied to macOS via limactl cp.
+
+**Solution:**
+    # Save inside Linux home
+    plt.savefig('/home/guillaumelumin.guest/mpi_scaling.png')
+    # Copy to macOS
+    exit
+    limactl cp hpc-node:/home/guillaumelumin.guest/mpi_scaling.png ~/Documents/
+
+**Lesson:**
+Always save generated files to the Linux home inside Lima.
+Use limactl cp to transfer files to macOS when needed.
+
+---
+
+## Issue 007 - zshrc overwritten by /etc/zshrc
+
+**Date:** 2026-06-01
+
+**Error:** Oh My Zsh theme not loading, ZSH_THEME missing from ~/.zshrc
+
+**Root cause:**
+Earlier command (cp /etc/zshrc > ~/.zshrc) replaced the Oh My Zsh
+configuration with the macOS system zshrc. All Oh My Zsh settings were lost.
+
+**Solution:**
+Recreate ~/.zshrc from scratch:
+    export ZSH="$HOME/.oh-my-zsh"
+    ZSH_THEME="agnoster"
+    plugins=(git)
+    source $ZSH/oh-my-zsh.sh
+    unsetopt correct
+    unsetopt correctall
+
+**Lesson:**
+Never overwrite ~/.zshrc with a system file. Always backup first:
+    cp ~/.zshrc ~/.zshrc.backup
+
+---
+
+## Issue 008 - heredoc << EOF broken in macOS terminal
+
+**Date:** 2026-06-01
+
+**Error:** Long heredoc scripts get corrupted when pasted in iTerm2.
+Content gets mixed with shell prompt, EOF marker misplaced.
+
+**Root cause:**
+iTerm2 paste buffer has timing issues with very long heredocs.
+The terminal interprets some characters as commands mid-paste.
+
+**Solution:**
+Use Python to write files instead of heredoc:
+    python3 << 'PYEOF'
+    with open("file.txt", "w") as f:
+        f.write(content)
+    PYEOF
+
+**Lesson:**
+For long file content, Python file writing is more reliable than
+heredoc in interactive terminals. Reserve heredoc for short scripts.
+
+---
+
+## Repos created
+
+| Repo | Description | Key files |
+|------|-------------|-----------|
+| hpc-job-templates | Annotated Slurm job scripts | 7 scripts covering serial/OMP/MPI/array/GPU |
+| slurm-admin-cheatsheet | Admin command reference | Commands, parameters, troubleshooting |
+| lmod-demo-environment | Lmod modulefile demo | NWChem 7.3.0 modulefile, validated calculation |
+| mpi-scaling-benchmark | MPI strong scaling test | mpi4py benchmark, scaling plot |
+| bash-hpc-toolkit | Production bash scripts | 5 scripts with set -euo pipefail |
+| slurm-efficiency-analyzer | Job efficiency analyzer | HTML report from sacct data |
+| hpc-lab-journal | This journal | Real issues and solutions |
 
 ## Validated results
 
