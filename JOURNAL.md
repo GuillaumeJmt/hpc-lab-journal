@@ -255,3 +255,66 @@ All scripts tested in Lima VM Ubuntu 24.04 ARM64.
 | module_check.sh | OK | Correctly detects available/missing modules |
 | job_efficiency.sh | OK | sacct disabled in Lima - handled gracefully |
 | submit_and_watch.sh | Partial | Job submission works, monitoring blocked by Lima cgroup issue |
+
+---
+
+## Issue 010 - GitHub Actions CI pipeline fails on shellcheck warnings
+
+**Date:** 2026-06-06
+
+**Context:** Setting up GitHub Actions CI/CD pipeline to automatically verify
+bash script quality with shellcheck on every push.
+
+**Error:**
+    In job_efficiency.sh line 23:
+        --jobs=$(sacct ...) \
+               ^-- SC2046 (warning): Quote this to prevent word splitting.
+    In module_check.sh line 16:
+    source /etc/profile.d/lmod.sh 2>/dev/null || true
+           ^-- SC1091 (info): Not following external file
+
+**Root cause:**
+Two real issues detected by shellcheck:
+1. SC2046: Unquoted command substitution in --jobs= argument risks word splitting
+   if the output contains spaces or special characters
+2. SC1091: shellcheck cannot follow external source files not specified as input
+
+**Solution:**
+SC2046 - Quote the subshell:
+    --jobs="$(sacct -u "$USERNAME" ...)"
+
+SC1091 - Tell shellcheck to ignore this specific source:
+    # shellcheck source=/dev/null
+    source /etc/profile.d/lmod.sh 2>/dev/null || true
+
+**Lesson:**
+shellcheck catches real bugs. SC2046 is a genuine risk - unquoted command
+substitution can break scripts in unexpected ways. Always quote subshells.
+CI/CD pipelines that run shellcheck on every push prevent these issues
+from reaching production.
+
+---
+
+## CI/CD pipeline created
+
+**Date:** 2026-06-06
+
+**Repo:** bash-hpc-toolkit
+
+Created GitHub Actions pipeline (.github/workflows/shellcheck.yml) that:
+- Runs shellcheck on all .sh files on every push to main
+- Verifies set -euo pipefail is present in all scripts
+- Completes in ~11 seconds
+
+Pipeline history:
+- Run #1: FAILED - shellcheck found SC2046 and SC1091
+- Run #2: PASSED - after fixing both issues
+- Run #3: PASSED - confirmed on clean commit
+
+This demonstrates the DevSecOps workflow mentioned in the ULB job posting:
+code push -> automated quality check -> fix -> green pipeline.
+
+**Lesson:**
+CI/CD pipelines for infrastructure code (bash scripts, Ansible playbooks,
+modulefiles) catch issues before they reach production clusters.
+The same principle applies to GitLab CI/CD used by the ULB HPC team.
