@@ -22,11 +22,40 @@ See [JOURNAL.md](JOURNAL.md) for the full log.
 
 ## Issues documented
 
-| Issue | Summary |
-|-------|---------|
-| 001 | pyenv fails to compile Python on macOS 26 |
-| 002 | Slurm job stuck in CG state in Lima VM |
-| 003 | NWChem basis library not found after conda install |
-| 004 | numpy conflicts with NWChem in conda environment |
-| 005 | Lmod not persistent across Lima sessions |
-| 006 | matplotlib savefig fails on read-only Lima filesystem |
+| Issue | Category | Summary |
+|-------|----------|---------|
+| 001 | macOS | pyenv fails to compile Python on macOS 26 |
+| 002 | Slurm | Job stuck in CG state in Lima VM - cgroup limitation |
+| 003 | NWChem | Basis library not found after conda install |
+| 004 | conda | numpy conflicts with NWChem in conda environment |
+| 005 | Lmod | Module system not persistent across Lima sessions |
+| 006 | Lima | matplotlib savefig fails on read-only filesystem |
+| 007 | Lima | bash scripts cannot read Lima-mounted macOS filesystem |
+| 008 | Lima | submit_and_watch.sh fails with read-only filesystem |
+| 009 | Slurm | Node stuck in IDLE+COMPLETING+NOT_RESPONDING state |
+| 010 | CI/CD | GitHub Actions shellcheck pipeline - SC2046 and SC1091 |
+
+## Test results
+
+| Script | Status | Notes |
+|--------|--------|-------|
+| check_disk.sh | OK | Works correctly |
+| hpc_health_check.sh | OK | Shows Slurm, disk, memory, load |
+| module_check.sh | OK | Detects available/missing modules |
+| job_efficiency.sh | OK | sacct disabled in Lima - handled gracefully |
+| submit_and_watch.sh | Partial | Blocked by Lima cgroup limitation |
+
+## CI/CD
+
+bash-hpc-toolkit has a GitHub Actions pipeline that runs shellcheck
+on every push. Pipeline passes as of 2026-06-06.
+
+## Validated results
+
+| Software | Version | Test | Result |
+|----------|---------|------|--------|
+| NWChem | 7.3.0 | H2O HF/STO-3G | -74.962946671090 Hartree |
+| mpi4py | 4.1.2 | Strong scaling 1-4 ranks | Speedup x2.16 on 2 ranks |
+| Apptainer | latest | scientific-python container | numpy 2.4.6, scipy 1.17.1 |
+| Lmod | 8.6.19 | module load NWChem/7.3.0 | Working |
+| GitHub Actions | - | shellcheck pipeline | Passing |
