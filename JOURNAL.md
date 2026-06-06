@@ -172,3 +172,86 @@ Use limactl cp to transfer files to macOS when needed.
 | mpi4py | 4.1.2 | Strong scaling 1-4 ranks | Speedup x2.16 on 2 ranks |
 | Slurm | 23.x | Job submission | Functional with workarounds |
 | Lmod | 8.6.19 | module load NWChem/7.3.0 | Working |
+
+---
+
+## Issue 007 - bash scripts cannot read Lima-mounted macOS filesystem
+
+**Date:** 2026-06-06
+
+**Error:** Resource deadlock avoided when accessing /Users/guillaumelumin/Documents from Lima
+
+**Root cause:**
+Lima mounts the macOS home directory via VirtioFS. Some file operations
+(lseek, certain reads) are not supported on this mount type.
+bash scripts fail when trying to read files from the macOS filesystem inside Lima.
+
+**Solution:**
+Copy files to the Linux home first via limactl cp:
+    limactl cp ~/Documents/HPC-ULB/bash-hpc-toolkit/script.sh hpc-node:/home/guillaumelumin.guest/
+
+**Lesson:**
+Always work with files in the Linux home inside Lima.
+Use limactl cp to transfer files between macOS and Lima.
+
+---
+
+## Issue 008 - submit_and_watch.sh fails with read-only filesystem
+
+**Date:** 2026-06-06
+
+**Error:** tee: submit_watch.log: Read-only file system
+
+**Root cause:**
+Script was run from a directory mounted read-only (macOS filesystem via Lima).
+tee cannot write log files there.
+
+**Solution:**
+Always run scripts from the Linux home directory inside Lima:
+    cd ~
+    bash ~/submit_and_watch.sh ~/test.sh
+
+**Lesson:**
+HPC scripts that write log files must be run from a writable directory.
+On real clusters, always run from /home or /scratch, never from NFS read-only mounts.
+
+---
+
+## Issue 009 - Slurm node stuck in IDLE+COMPLETING+NOT_RESPONDING
+
+**Date:** 2026-06-06
+
+**Error:** Node state: IDLE+COMPLETING+NOT_RESPONDING
+Jobs stay in PENDING despite node appearing idle.
+
+**Root cause:**
+Lima VM has incomplete cgroup support. Jobs that finish abnormally
+leave the node in a mixed state that Slurm cannot resolve cleanly.
+This is a known Lima/virtualization limitation.
+
+**Workaround:**
+    sudo systemctl stop slurmd slurmctld
+    sudo rm -rf /var/lib/slurm/slurmctld/hash.*
+    sudo systemctl start slurmctld slurmd
+    sudo scontrol update NodeName=lima-hpc-node State=idle
+
+**Lesson:**
+On real HPC clusters with proper cgroup support, this does not occur.
+The Lima environment is sufficient for learning Slurm administration
+but has known limitations with job cleanup.
+
+---
+
+## Test results - bash-hpc-toolkit
+
+**Date:** 2026-06-06
+
+All scripts tested in Lima VM Ubuntu 24.04 ARM64.
+
+| Script | Status | Notes |
+|--------|--------|-------|
+| check_disk.sh | OK | Works correctly, SKIP for non-existent paths |
+| hpc_health_check.sh | OK | Shows Slurm status, disk, memory, load |
+| module_check.sh | OK | Correctly detects available/missing modules |
+| job_efficiency.sh | OK | sacct disabled in Lima - handled gracefully |
+| submit_and_watch.sh | Partial | Job submission works, monitoring blocked by Lima cgroup issue |
