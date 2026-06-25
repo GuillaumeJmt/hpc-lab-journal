@@ -318,3 +318,66 @@ code push -> automated quality check -> fix -> green pipeline.
 CI/CD pipelines for infrastructure code (bash scripts, Ansible playbooks,
 modulefiles) catch issues before they reach production clusters.
 The same principle applies to GitLab CI/CD used by the ULB HPC team.
+
+## Issue 011 - Lima VM unreachable: no route to host, boot frozen before network
+
+**Date:** 2026-06-24
+
+**Error:**
+    limactl shell hpc-node
+    ssh: connect to host 127.0.0.1 port 52000: Connection refused
+
+VM shows STATUS=Running in `limactl list`, but every SSH attempt is refused.
+A second VM (lima-test) on the same host worked normally.
+
+**Diagnosis:**
+Worked through the three distinct network failure modes.
+
+1. Host side - `Connection refused` on 127.0.0.1:52000
+   The port-forward exists but nothing answers behind it.
+
+2. Host agent log (ha.stderr.log):
+    tcpproxy: error dialing "192.168.5.15:22": connect tcp 192.168.5.15:22: no route to host
+    kex_exchange_identification: read: Connection reset by peer
+   `no route to host` (not `refused`) means the guest itself is unreachable on
+   the internal network - not just sshd being down.
+
+3. Host agent log (ha.stdout.log):
+    {"status":{"vsock":{"type":"failed","reason":"Failed to wait for guest SSH server"}}}
+   The guest sshd never came up over vsock.
+
+4. Serial console (serialv.log): 0 bytes, empty even during `limactl start`
+   and `limactl --debug start`. The kernel writes nothing -> the guest is not
+   booting at all.
+
+**Root cause:**
+The VM is "Running" for the hypervisor (the VM process exists) but the guest OS
+never boots: the EFI/disk boot state was corrupted, most likely after an abrupt
+stop or host sleep while the VM was running. The failure is upstream of the
+network and of SSH.
+
+**Workaround attempted:**
+    limactl stop --force hpc-node
+    limactl start hpc-node
+Did not recover - console stayed empty, boot still frozen.
+
+**Resolution:**
+Data is safe: the 107 GB `disk` image is intact, and all real work
+(slurm.conf, scripts, NWChem setup) is already pushed to GitHub. Rather than
+spend time on recovery before the interview, the VM is left aside; a clean
+rebuild (~15 min) is the pragmatic option if a sandbox is needed again.
+
+**Lesson:**
+- Distinguish the three failure modes: `Connection refused` (host reachable,
+  service down -> look at the service), `no route to host` (host/network
+  unreachable -> look at the network/VM), `timeout` (filtered -> firewall).
+  Here, refused + no route + empty serial console = boot frozen before the
+  network came up, NOT an SSH problem.
+- A VM reporting "Running" does not mean the guest OS actually booted.
+- Take a snapshot of a working VM so a future corruption is a one-command
+  rollback instead of a rebuild:
+    limactl snapshot create hpc-node --tag ok
+    limactl snapshot apply hpc-node --tag ok
+  Same "reproducible state" reflex as Infrastructure-as-Code.
+
+---

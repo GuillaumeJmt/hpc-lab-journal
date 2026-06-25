@@ -34,6 +34,7 @@ See [JOURNAL.md](JOURNAL.md) for the full log.
 | 008 | Lima | submit_and_watch.sh fails with read-only filesystem |
 | 009 | Slurm | Node stuck in IDLE+COMPLETING+NOT_RESPONDING state |
 | 010 | CI/CD | GitHub Actions shellcheck pipeline - SC2046 and SC1091 |
+| 011 | Network | Lima VM unreachable - no route to host, boot frozen before network |
 
 ## Test results
 
