@@ -51,11 +51,11 @@ See [JOURNAL.md](JOURNAL.md) for the full log.
 bash-hpc-toolkit has a GitHub Actions pipeline that runs shellcheck
 on every push. Pipeline passes as of 2026-06-06.
 
-## Validated results
+## Reproducible results
 
 | Software | Version | Test | Result |
 |----------|---------|------|--------|
-| NWChem | 7.3.0 | H2O HF/STO-3G | -74.962946671090 Hartree |
+| NWChem | 7.3.0 | H2O HF/STO-3G | -74.962946671090 Ha (reproducible, not a literature value) |
 | mpi4py | 4.1.2 | Scaling methodology | Corrected; results pending validated hardware |
 | Apptainer | latest | scientific-python container | numpy 2.4.6, scipy 1.17.1 |
 | Lmod | 8.6.19 | module load NWChem/7.3.0 | Working |
