@@ -158,17 +158,17 @@ Use limactl cp to transfer files to macOS when needed.
 |------|-------------|-----------|
 | hpc-job-templates | Annotated Slurm job scripts | 7 scripts covering serial/OMP/MPI/array/GPU |
 | slurm-admin-cheatsheet | Admin command reference | Commands, parameters, troubleshooting |
-| lmod-demo-environment | Lmod modulefile demo | NWChem 7.3.0 modulefile, validated calculation |
+| lmod-demo-environment | Lmod modulefile demo | NWChem 7.3.0 modulefile, reproducible calculation |
 | mpi-scaling-benchmark | MPI strong scaling test | mpi4py benchmark, scaling plot |
 | bash-hpc-toolkit | Defensive bash scripts | 5 scripts with set -euo pipefail |
 | slurm-efficiency-analyzer | Job efficiency analyzer | HTML report from sacct data |
 | hpc-lab-journal | This journal | Real issues and solutions |
 
-## Validated results
+## Reproducible results
 
 | Software | Version | Test | Result |
 |----------|---------|------|--------|
-| NWChem | 7.3.0 | H2O HF/STO-3G | -74.962946671090 Hartree |
+| NWChem | 7.3.0 | H2O HF/STO-3G | -74.962946671090 Ha (reproducible, not a literature value) |
 | mpi4py | 4.1.2 | Scaling methodology | Corrected; results pending validated hardware |
 | Slurm | 23.x | Job submission | Functional with workarounds |
 | Lmod | 8.6.19 | module load NWChem/7.3.0 | Working |
