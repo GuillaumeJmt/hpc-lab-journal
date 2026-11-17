@@ -1,13 +1,13 @@
 # HPC Lab Journal
 
 A technical diary of real problems encountered and solved while building
-an HPC support environment on Apple M1 (ARM64).
+a single-node HPC environment on Apple M1 (ARM64).
 
 This is not a sanitized tutorial. Every issue is real.
 
 ## Why this journal exists
 
-HPC support engineering is mostly about diagnosing unexpected problems.
+Most of the work on a computing environment is diagnosing unexpected problems.
 This journal documents the diagnostic process - what failed, why, and how it was fixed.
 
 ## Read the journal
@@ -16,7 +16,7 @@ See [JOURNAL.md](JOURNAL.md) for the full log.
 
 ## Environment
 
-- Hardware: Apple MacBook M1 (2019) - ARM64
+- Hardware: Apple MacBook with M1 chip - ARM64
 - Host OS: macOS 26 (Tahoe)
 - VM: Lima 2.1.1 - Ubuntu 24.04 LTS ARM64
 

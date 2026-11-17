@@ -1,7 +1,7 @@
 # HPC Lab Journal
 
 Personal log of technical problems encountered and solved while building
-a realistic HPC support environment on Apple M1 (ARM64).
+a realistic single-node HPC environment on Apple M1 (ARM64).
 
 This journal documents real issues - not a sanitized tutorial.
 
@@ -9,7 +9,7 @@ This journal documents real issues - not a sanitized tutorial.
 
 ## Environment
 
-- Hardware: Apple MacBook M1 (2019) - ARM64
+- Hardware: Apple MacBook with M1 chip - ARM64
 - Host OS: macOS 26 (Tahoe)
 - VM: Lima 2.1.1 - Ubuntu 24.04 LTS ARM64
 - Goal: reproduce an HPC cluster environment for learning and portfolio
@@ -132,19 +132,19 @@ to their ~/.bashrc.
 
 **Date:** 2026-05-31
 
-**Error:** OSError: [Errno 30] Read-only file system: '/Users/guillaumelumin/Documents/mpi_scaling.png'
+**Error:** OSError: [Errno 30] Read-only file system: '/Users/<user>/Documents/mpi_scaling.png'
 
 **Root cause:**
 Lima VM mounts the macOS home directory as read-only by default.
-Files must be saved inside the Linux home (/home/guillaumelumin.guest/)
+Files must be saved inside the Linux home (/home/<user>.guest/)
 and then copied to macOS via limactl cp.
 
 **Solution:**
     # Save inside Linux home
-    plt.savefig('/home/guillaumelumin.guest/mpi_scaling.png')
+    plt.savefig('/home/<user>.guest/mpi_scaling.png')
     # Copy to macOS
     exit
-    limactl cp hpc-node:/home/guillaumelumin.guest/mpi_scaling.png ~/Documents/
+    limactl cp hpc-node:/home/<user>.guest/mpi_scaling.png ~/Documents/
 
 **Lesson:**
 Always save generated files to the Linux home inside Lima.
@@ -179,7 +179,7 @@ Use limactl cp to transfer files to macOS when needed.
 
 **Date:** 2026-06-06
 
-**Error:** Resource deadlock avoided when accessing /Users/guillaumelumin/Documents from Lima
+**Error:** Resource deadlock avoided when accessing /Users/<user>/Documents from Lima
 
 **Root cause:**
 Lima mounts the macOS home directory via VirtioFS. Some file operations
@@ -188,7 +188,7 @@ bash scripts fail when trying to read files from the macOS filesystem inside Lim
 
 **Solution:**
 Copy files to the Linux home first via limactl cp:
-    limactl cp ~/Documents/HPC-ULB/bash-hpc-toolkit/script.sh hpc-node:/home/guillaumelumin.guest/
+    limactl cp ~/Documents/hpc-lab/bash-hpc-toolkit/script.sh hpc-node:/home/<user>.guest/
 
 **Lesson:**
 Always work with files in the Linux home inside Lima.
@@ -311,13 +311,13 @@ Pipeline history:
 - Run #2: PASSED - after fixing both issues
 - Run #3: PASSED - confirmed on clean commit
 
-This demonstrates the DevSecOps workflow mentioned in the ULB job posting:
+This is the DevSecOps loop in miniature:
 code push -> automated quality check -> fix -> green pipeline.
 
 **Lesson:**
 CI/CD pipelines for infrastructure code (bash scripts, Ansible playbooks,
 modulefiles) catch issues before they reach production clusters.
-The same principle applies to GitLab CI/CD used by the ULB HPC team.
+The same principle applies to GitLab CI/CD and other CI systems.
 
 ## Issue 011 - Lima VM unreachable: no route to host, boot frozen before network
 
@@ -364,8 +364,8 @@ Did not recover - console stayed empty, boot still frozen.
 **Resolution:**
 Data is safe: the 107 GB `disk` image is intact, and all real work
 (slurm.conf, scripts, NWChem setup) is already pushed to GitHub. Rather than
-spend time on recovery before the interview, the VM is left aside; a clean
-rebuild (~15 min) is the pragmatic option if a sandbox is needed again.
+spend time on recovery, the VM is left aside; a clean
+rebuild (about 15 min) is the pragmatic option if a sandbox is needed again.
 
 **Lesson:**
 - Distinguish the three failure modes: `Connection refused` (host reachable,
